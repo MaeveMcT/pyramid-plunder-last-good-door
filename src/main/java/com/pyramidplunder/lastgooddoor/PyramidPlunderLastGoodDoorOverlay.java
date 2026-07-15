@@ -3,9 +3,11 @@ package com.pyramidplunder.lastgooddoor;
 import java.awt.BasicStroke;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.awt.Polygon;
+import java.awt.Shape;
 import javax.inject.Inject;
+import net.runelite.api.GameObject;
 import net.runelite.api.TileObject;
+import net.runelite.api.WallObject;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -38,16 +40,44 @@ public class PyramidPlunderLastGoodDoorOverlay extends Overlay
 			return null;
 		}
 
-		Polygon polygon = door.getCanvasTilePoly();
-		if (polygon != null)
+		Shape hull = getConvexHull(door);
+		if (hull == null)
+		{
+			hull = door.getClickbox();
+		}
+		renderShape(graphics, hull);
+
+		// Wall objects can consist of two separately rendered model pieces.
+		if (door instanceof WallObject)
+		{
+			renderShape(graphics, ((WallObject) door).getConvexHull2());
+		}
+		return null;
+	}
+
+	private static Shape getConvexHull(TileObject object)
+	{
+		if (object instanceof GameObject)
+		{
+			return ((GameObject) object).getConvexHull();
+		}
+		if (object instanceof WallObject)
+		{
+			return ((WallObject) object).getConvexHull();
+		}
+		return null;
+	}
+
+	private void renderShape(Graphics2D graphics, Shape shape)
+	{
+		if (shape != null)
 		{
 			OverlayUtil.renderPolygon(
 				graphics,
-				polygon,
+				shape,
 				config.highlightColor(),
 				config.highlightColor(),
 				new BasicStroke(2));
 		}
-		return null;
 	}
 }
